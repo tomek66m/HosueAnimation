@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <script src="jscolor.txt"></script>
+
+        <script src="animacja.txt"></script>
+        <title>Animacja Pór Roku</title>
+
+        <style>
+            .slider
+            {
+            -webkit-appearance: none;  /* Override default CSS styles */
+            appearance: none;
+            width: 100%; /* Full-width */
+            height: 25px; /* Specified height */
+            background: linear-gradient(to right, #228B22, #228B22); /* Grey background */
+            opacity: 0.9; /* Set transparency (for mouse-over effects on hover) */
+            -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+            transition: opacity .2s;
+            }
+
+            table, th, td{
+                border: 1px solid gray;
+                font-size: 15px;
+            }
+            table{
+                border-top: 2px solid #228B22;
+                border-left: 5px solid #228B22;
+                border-right: 2px solid #228B22;
+                border-bottom: 2px solid #228B22;
+            }
+        </style>
+
+    </head>
+    <body onLoad="updateCanvas();">
+        <div style="position: absolute; top: 5px; left: 5px;float: left">
+            <canvas id="myCanvas" width="1000" height="600" style="background: #cadcf7;" />
+        </div>
+        
+        <div style="position: absolute; top: 5px; left: 1010px; height: 100px;">
+            <table width=320px style="border-collapse: collapse; background: #1c1d1e; color: white">
+                <tr>
+                    <td>Fall Speed</td>
+                    <td><input name="FallSpeed" type="range" min="10" max="50" value="10"
+                        class="slider" id="fallSpeedSlider"></td>
+                </tr>
+                <tr>
+                    <td>
+                       Day Speed
+                    </td>
+                    <td>
+                        <input name="DaySpeed" type="range" min="1" max="5" value="2"
+            class="slider" id="daySpeedSlider">
+                    </td>
+                </tr>
+                <tr>
+                    <td>Rain</td>
+                    <td><input name="weatherTyp" type="radio" id="rainB"></td>
+                </tr>
+                <tr>
+                    <td>Snow</td>
+                    <td><input name="weatherTyp" type="radio" id="snowB"></td>
+                </tr>
+                <tr>
+                    <td>Storm</td>
+                    <td><input name="weatherTyp" type="radio" id="stormB" onChange="randomSnow();"></td>
+                </tr>
+                <tr>
+                    <td>Wind</td>
+                    <td><input name="weatherTyp" type="checkbox" id="windB" onChange="windOff();"></td>
+                </tr>
+                <tr>
+                    <td>Wind Direction</td>
+                    <td id="windDirection"></td>
+                </tr>
+                <tr>
+                    <td>House Walls Color</td>
+                    <td>
+                            <input id="colorButton" class="jscolor" onchange="update(this.jscolor)" value="F6C667">
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </body>
+</html>

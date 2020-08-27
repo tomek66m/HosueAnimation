@@ -1,0 +1,776 @@
+var context;
+var myCanvas;
+var backgroundColor = "#5f89cc";
+
+// obiekty
+var polana;
+var house;
+var tree;
+var lantern;
+
+// kolory
+var houseColorForHtml;
+
+
+// obsługa czasu
+var time = 0.0;
+var timeStamp;
+var fallStamp;
+var day = true;
+
+var tearCount = 400;
+var rainTable = [];
+var rainDrop;
+
+var snowCount = 400;
+var snowTable = [];
+var snowDrop;
+
+// slonce
+var sun;
+var currentSunDegree;
+
+// typ pogody
+var snb, rab, wib, stb;
+var wind;
+var leftWind, rightWind;
+var timeToChange;
+var timer;
+
+// pioruny
+var thunder;
+var thunderTimer;
+
+
+// wyłączenie wiatru
+function windOff()
+{
+    if(document.getElementById("windB").checked==false)
+    {
+        for(i=0;i<rainTable.length;i++)
+            rainTable[i].windInfluence=false;
+    }
+}
+
+
+function randomSnow()
+{
+    for(i=0;i<snowTable.length;i++)
+    {
+        var x = Math.random()*50;
+        if(x>=40)
+        snowTable[i].windInfluence=true;
+    }
+}
+// obiekty do narysowania
+
+function Thunder()
+{
+    this.X=0;
+    this.Y=0;
+    this.W=20;
+    this.alpha=0.5;
+
+    this.draw = function()
+    {
+        var gradient = context.createLinearGradient(this.X, this.Y, this.X+this.W, this.W/3);
+        
+        gradient.addColorStop(0, "rgba(255,255,255, "+this.alpha+")");
+        gradient.addColorStop(0.2, "rgba(0,0,255, "+this.alpha+")");
+        gradient.addColorStop(0, "rgba(255,255,255, "+this.alpha+")");
+        gradient.addColorStop(0.6, "rgba(0,0,255, "+this.alpha+")");
+        gradient.addColorStop(0, "rgba(255,255,255, "+this.alpha+")");
+        gradient.addColorStop(1, "rgba(0,0,255, "+this.alpha+")");
+        context.save();
+        context.strokeStyle=gradient;
+        //context.strokeStyle="red";
+        context.lineWidth=10;
+        context.beginPath();
+        context.moveTo(this.X, this.Y);
+        context.lineTo(this.X+this.W/2, this.W/2);
+        context.lineTo(this.X-this.W/2, this.W/1.5);
+        context.lineTo(this.X+this.W/2.5, this.W*2);
+        context.stroke();
+        context.restore();
+    }
+}
+
+
+function Polana()
+{
+    this.x = myCanvas.width/2;
+    this.y = myCanvas.height/2*3+200;
+    this.r = myCanvas.width/2+210;
+    this.color = "#33A532";
+
+    this.draw = function()
+    {
+        context.save();
+        context.fillStyle = this.color;
+        context.transform(this.r, 0, 0, this.r, this.x, this.y);
+        context.beginPath();
+        context.arc(0,0,1, 0, 2*Math.PI, false);
+        context.fill();
+        context.restore();
+    }
+}
+
+function House()
+{
+    //this.wallColor = "#59820f";
+    this.wallColor = "#F6C667";
+    this.wallBorderColor = "#FF9C3F";
+    this.roofTopColor = "#f2581f";
+    this.chimneyColor ="#777675";
+    this.windowColor = "#6cd4f7";
+    this.windowFramesColor = "#4f371a";
+    this.doorColor = "#750303";
+    this.doorBorderColor="#430101";
+    this.handleColor = "#E6F600";   
+
+    this.wallWidth = 280;
+    this.wallHeight = 210;
+
+    this.roofTopHeight = 150;
+
+    this.chimneyWidth = 50;
+    this.chimneyHeight = 80;
+
+    this.windowWidth = 75;
+    this.windowHeight = 75;
+    this.windowBorder = 7;
+
+    this.doorWidth = 70;
+    this.doorHeight = 95;
+
+    
+    this.xPos = 600; // 600
+    this.yPos = myCanvas.height-this.wallHeight-40;
+
+    this.draw = function()
+    {
+        // update koloru
+        this.wallColor = houseColorForHtml;
+
+        // ściana
+        context.save();
+        context.fillStyle=this.wallColor;
+        context.transform(this.wallWidth, 0, 0, this.wallHeight, this.xPos, this.yPos);
+        context.fillRect(0,0,1,1);
+        context.restore();
+        
+
+        // pierwsze okno
+        context.save();
+        context.fillStyle=this.windowColor;
+        context.transform(this.windowWidth, 0, 0, this.windowHeight,
+            this.xPos + this.wallWidth/20, this.yPos + this.wallHeight/6);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        // obramowanie pierwszego okna
+        context.save();
+        context.beginPath();
+        context.lineWidth="6";
+        context.strokeStyle=this.windowFramesColor;
+        context.rect(this.xPos + this.wallWidth/20, this.yPos + this.wallHeight/6,this.windowWidth,this.windowHeight);
+        context.stroke();
+        context.restore();
+
+        
+        //kratka
+        context.save();
+        context.fillStyle=this.windowFramesColor;
+        context.transform(this.windowBorder, 0, 0, this.windowHeight,
+        this.xPos + this.wallWidth/20+this.windowWidth/2-this.windowBorder/2, this.yPos+this.wallHeight/6);
+        context.fillRect(0,0,1,1);
+        context.restore();
+        context.save();
+        context.fillStyle=this.windowFramesColor;
+        context.transform(this.windowHeight, 0, 0, this.windowBorder,
+            this.xPos + this.wallWidth/20, this.yPos+this.wallHeight/6+this.windowHeight/2-this.windowBorder);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        //drugie okno
+        context.save();
+        context.fillStyle=this.windowColor;
+        context.transform(this.windowWidth, 0, 0, this.windowHeight,
+            this.xPos + this.wallWidth-this.windowHeight - this.wallWidth/20, this.yPos + this.wallHeight/6);
+        context.fillRect(0,0,1,1);
+        context.restore();
+        //kratka
+        context.save();
+        context.fillStyle=this.windowFramesColor;
+        context.transform(this.windowBorder, 0, 0, this.windowHeight,
+            this.xPos + this.wallWidth-this.windowHeight - this.wallWidth/20+this.windowWidth/2-this.windowBorder/2, this.yPos+this.wallHeight/6);
+        context.fillRect(0,0,1,1);
+        context.restore();
+        context.save();
+        context.fillStyle=this.windowFramesColor;
+        context.transform(this.windowHeight, 0, 0, this.windowBorder,
+            this.xPos + this.wallWidth - this.wallWidth/20 - this.windowWidth, this.yPos+this.wallHeight/6+this.windowHeight/2-this.windowBorder);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        // obramowanie drugiego okna
+        context.save();
+        context.beginPath();
+        context.lineWidth="6";
+        context.strokeStyle=this.windowFramesColor;
+        context.rect(this.xPos + this.wallWidth - this.wallWidth/20 - this.windowWidth, this.yPos + this.wallHeight/6,this.windowWidth,this.windowHeight);
+        context.stroke();
+        context.restore();
+
+
+        // drzwi
+        context.save();
+        context.fillStyle=this.doorColor;
+        context.transform(this.doorWidth, 0, 0, this.doorHeight,
+            this.xPos+this.wallWidth/2-this.doorWidth/2, this.yPos+5+this.wallHeight-this.doorHeight-3);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        // obramowanie drzwi
+        context.save();
+        context.beginPath();
+        context.lineWidth="6";
+        context.strokeStyle=this.doorBorderColor;
+        context.rect(this.xPos+this.wallWidth/2-this.doorWidth/2, this.yPos+5+this.wallHeight-this.doorHeight,this.doorWidth,this.doorHeight-6);
+        context.stroke();
+        context.restore();
+ 
+        // klamka od drzwi
+        context.save();
+        context.fillStyle=this.handleColor;
+        context.transform(20, 0, 0, 6,
+            this.xPos+this.wallWidth/2-this.doorWidth/2+40, this.yPos+this.wallHeight-this.doorHeight+50);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        context.save();
+        context.fillStyle=this.handleColor;
+        context.transform(6, 0, 0, 10,
+            this.xPos+this.wallWidth/2-this.doorWidth/2+40, this.yPos+this.wallHeight-this.doorHeight+50);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        // komin
+        context.save();
+        context.fillStyle=this.chimneyColor;
+        context.transform(this.chimneyWidth, 0, 0, this.chimneyHeight, 
+            this.xPos+this.wallWidth/3*2, this.yPos-this.roofTopHeight/2-this.chimneyHeight+20);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        // nakładka na komin
+
+        context.save();
+        context.fillStyle="#afafae";
+        context.transform(this.chimneyWidth+20, 0, 0, 15,
+            this.xPos+this.wallWidth/3*2-10, this.yPos-this.roofTopHeight/2-this.chimneyHeight+20);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+
+        // obramowanie ściany
+        context.save();
+        context.beginPath();
+        context.lineWidth="9";
+        context.strokeStyle=this.wallBorderColor;
+        context.rect(this.xPos, this.yPos, this.wallWidth,this.wallHeight);
+        context.stroke();
+        context.restore();
+
+        // dach2
+        context.fillStyle=this.roofTopColor;
+        context.beginPath();
+        context.moveTo(this.xPos-20, this.yPos+5);
+        context.lineTo(this.xPos+this.wallWidth+20, this.yPos+5);
+        context.lineTo(this.xPos+this.wallWidth/2, this.yPos+5-this.roofTopHeight);
+        context.closePath();
+        context.fill();
+        context.restore();
+
+        // nakladka na na dach 1
+        context.fillStyle="#962901";
+        context.beginPath();
+        context.moveTo(this.xPos-5, this.yPos+5);
+        context.lineTo(this.xPos+this.wallWidth+5, this.yPos+5);
+        context.lineTo(this.xPos+this.wallWidth/2, this.yPos+5-this.roofTopHeight+15);
+        context.closePath();
+        context.fill();
+        context.restore();
+
+        // nakladka na na dach 2
+        context.fillStyle=this.wallColor;
+        context.beginPath();
+        context.moveTo(this.xPos+5, this.yPos+5);
+        context.lineTo(this.xPos+this.wallWidth-5, this.yPos+5);
+        context.lineTo(this.xPos+this.wallWidth/2, this.yPos+5-this.roofTopHeight+25);
+        context.closePath();
+        context.fill();
+        context.restore();
+
+        // okno dachowe
+        context.save();
+        context.fillStyle=this.windowColor;
+        context.transform(this.windowWidth/2, 0, 0, this.windowWidth/2, this.xPos+this.wallWidth/2, this.yPos-30);
+        context.beginPath();
+        context.arc(0,0,1,0,2*Math.PI, false);
+        context.fill();
+        context.restore();
+
+        // obramowanie okna dachowego
+        context.save();
+        context.strokeStyle=this.windowFramesColor;
+        context.lineWidth="6";
+        context.beginPath();
+        context.arc(this.xPos+this.wallWidth/2, this.yPos-30,this.windowWidth/2,0,2*Math.PI, false);
+        context.stroke();
+        //context.fill();
+        context.restore();
+        
+    }
+}
+
+function Tree()
+{
+    this.x = 200;
+    this.y = myCanvas.height-190;
+    this.trunkWidth = 50;
+    this.trunkHeight = 100;
+    this.trunkColor = "#964b00";
+    this.leafsRadius = 50;
+    this.leafsColor = "#136207";
+
+    this.draw = function()
+    {
+        // pień
+        context.save();
+        context.fillStyle = this.trunkColor;
+        context.transform(this.trunkWidth, 0, 0, this.trunkHeight, this.x, this.y);
+        context.fillRect(0,0,1,1);
+        context.restore();
+
+        // dziupla
+        context.save();
+        context.fillStyle = "#261000";
+        context.transform(13, 0, 0, 13, this.x+this.trunkWidth/2, this.y+50);
+        context.beginPath();
+        context.arc(0,0,1,0,2*Math.PI, false);
+        context.fill();
+        context.restore();
+
+        //liście
+        context.save();
+        context.fillStyle = this.leafsColor;
+        context.transform(this.leafsRadius, 0, 0, this.leafsRadius, this.x+25, this.y-25);
+        context.beginPath();
+        context.arc(0,0,1,0,2*Math.PI, false);
+        context.fill();
+        context.restore();
+
+    }
+}
+
+function Lantern()
+{
+    this.color = "#000000";
+    this.bubbleGrayColor = "#7c8087";
+    this.bubbleYellowColor = "#FFFF00";
+
+    this.xPos = 450;
+    this.yPos = myCanvas.height-40;
+
+    this.width = 20;
+    this.height = 180;
+
+    this.swieci = true;
+    
+    this.poswiata = function()
+    {
+        //poświata
+        var gradient = context.createRadialGradient(0,0,0.001,0,0,1.0);
+        gradient.addColorStop(0, "yellow");
+        gradient.addColorStop(1, "rgba(0,0,0,0");
+        context.save();
+        context.fillStyle=gradient;
+        context.transform(100,0,0,100,this.xPos+10,this.yPos-this.height-35);
+        context.arc(0,0,1,0,Math.PI*2);
+        context.fill();
+        context.restore();       
+    }
+
+    this.draw = function()
+    {
+        //podstawa
+        context.save();
+        context.fillStyle = this.color;
+        context.transform(this.width, 0, 0, this.height,
+            this.xPos, this.yPos-this.height);
+        context.fillRect(0,0,1,1);
+        context.restore();
+        //klosz
+        context.save();
+        if(this.swieci) context.fillStyle = this.bubbleGrayColor;
+        else
+        {
+            this.poswiata();
+            context.fillStyle = this.bubbleYellowColor;
+        }
+        context.beginPath();
+        context.moveTo(this.xPos-10, this.yPos-this.height-60); // dol
+        context.lineTo(this.xPos+this.width+10, this.yPos-this.height-60); // prawo gora
+        context.lineTo(this.xPos+this.width+20, this.yPos-this.height+30-60); // lewo gora
+        context.lineTo(this.xPos+this.width+10, this.yPos-this.height+60-60); // gora
+        context.lineTo(this.xPos-10, this.yPos-this.height+60-60); // lewo dol
+        context.lineTo(this.xPos-20, this.yPos-this.height+30-60);
+        context.closePath();
+        context.lineWidth = 8;
+        context.stroke();
+        context.fill();
+        context.restore();
+    }
+}
+
+function RainDrop(XPos, YPos, Width, Height)
+{
+    this.color = "#95BED1";
+    this.xPos = XPos;
+    this.yPos = YPos;
+    this.width = Width;
+    this.height = Height;
+    this.windInfluence=false;
+
+
+    this.draw = function()
+    {
+        context.save();
+        context.fillStyle = this.color;
+        if(this.windInfluence)
+        {
+            if(leftWind) context.transform(this.width, -30, 0, this.height, this.xPos+=wind, this.yPos);
+            if(rightWind) context.transform(this.width, 30, 0, this.height, this.xPos+=wind, this.yPos);
+        }
+        else
+        {
+            context.transform(this.width, 0, 0, this.height,
+                this.xPos, this.yPos);
+        }
+        context.fillRect(0,0,1,1);
+        context.restore();
+    }
+}
+
+function SnowDrop(XPos, YPos, Radius)
+{
+    this.color = "#FFFFFF";
+    this.xPos = XPos;
+    this.yPos = YPos;
+    this.radius = Radius;
+    this.windInfluence;
+    this.draw = function()
+    {
+        context.save();
+        context.fillStyle = this.color;
+        // wpływ wiatru
+        if(this.windInfluence)
+            context.transform(this.radius, 0, 0, this.radius, this.xPos+=wind, this.yPos);
+        else
+        context.transform(this.radius, 0, 0, this.radius, this.xPos, this.yPos);
+        context.beginPath();
+        context.arc(0, 0, 1, 0, 2*Math.PI, false);
+        context.fill();
+        context.restore();
+    }
+}
+
+function Sun(XPos, YPos, Radius)
+{
+    this.color = "#FDB813";
+    this.xPos = XPos;
+    this.yPos = YPos;
+    this.radius = Radius;
+
+    this.move = function()
+    {
+        if(currentSunDegree<=Math.PI*2)
+        {
+            currentSunDegree+=timeStamp*350*(Math.PI/180);
+        }
+        else currentSunDegree=0;
+
+        this.xPos = 650 + 800 * Math.cos(currentSunDegree);
+        this.yPos = 550 + 400 * Math.sin(currentSunDegree);
+    }
+
+    this.draw = function()
+    {
+        //this.move();
+        context.save();
+        context.fillStyle = this.color;
+        context.transform(this.radius, 0, 0, this.radius, this.xPos, this.yPos);
+        context.beginPath();
+        context.arc(0, 0, 1, 0, 2*Math.PI, false);
+        context.fill();
+        context.restore();
+    }
+}
+
+
+function updateCanvas()
+{
+    myCanvas = document.getElementById( "myCanvas" );
+    context = myCanvas.getContext( "2d" );
+
+
+    // inicjalizacja obiektów
+    polana = new Polana();
+    house = new House();
+    tree = new Tree();
+    lantern = new Lantern();
+    sun = new Sun(0,0,100);
+
+    thunder = new Thunder;
+    thunder.X = 100;
+    thunder.Y = 0;
+    thunder.W = 200;
+    thunderTimer=5;
+
+
+
+    currentSunDegree = 0;
+    leftWind= true;
+    rightWind = false;
+    wind=0;
+    timeToChange=true;
+    timer=0;
+    
+
+    for(var i =0;i<tearCount;i++)
+    {
+        rainDrop = new RainDrop(Math.floor(Math.random()*myCanvas.width),
+         Math.floor(Math.random()*600)-150, Math.floor(Math.random()*3), Math.floor(Math.random()*30));
+        rainTable.push(rainDrop);
+    }
+
+    for(var i =0;i<snowCount;i++)
+    {
+        
+        snowDrop = new SnowDrop(Math.floor(Math.random()*myCanvas.width),
+         Math.floor(Math.random()*600)-100, Math.floor(Math.random()*5));
+        snowTable.push(snowDrop);
+    }
+
+    context.fillStyle = backgroundColor;
+
+    framer = setTimeout(render, 1);
+}
+
+
+function render()
+{
+    // odczytanie sliderow i buttonow
+    timeStamp = document.getElementById("daySpeedSlider").value/1500;
+    fallStamp = document.getElementById("fallSpeedSlider").value/20;
+    houseColorForHtml = document.getElementById('colorButton').style.backgroundColor;
+
+    snb=document.getElementById("snowB").checked;
+    rab=document.getElementById("rainB").checked;
+    wib=document.getElementById("windB").checked;
+    stb=document.getElementById("stormB").checked;
+
+    // tło
+    context.fillStyle = backgroundColor;
+    context.fillRect( 0, 0, myCanvas.width, myCanvas.height );
+    
+
+    // noc
+    if(currentSunDegree<=(1/2*Math.PI*2) && currentSunDegree <=Math.PI*2)
+    {
+        context.fillStyle = "black";   
+        context.fillRect( 0, 0, myCanvas.width, myCanvas.height );
+
+        lantern.swieci = false;
+    }
+    else
+    {
+        lantern.swieci = true;
+    }
+
+    // rysowanie elementów
+    //burza
+    if(stb)
+    {
+        rab=true;
+        snb=true;
+        // błyski
+        if(thunderTimer<=10) thunderTimer-=0.06;
+        {
+            thunder.alpha-=0.01;
+        }
+        if(thunderTimer<5)
+        {
+            thunder.alpha=1;
+            thunderTimer=10;
+        }
+        /*if(thunder.alpha>=0.3)
+        {
+            context.save();
+            context.fillStyle="rgba(255,255,+" +thunderTimer/10 + ",0.5)";
+            context.transform(myCanvas.width, 0, 0, myCanvas.height, 0, 0);
+            context.fillRect(0,0,1,1);
+            context.restore();
+        }*/
+
+        //
+        context.save();
+        context.fillStyle="rgba(255,230,0," + thunderTimer/30 +")";
+        context.transform(myCanvas.width, 0, 0, myCanvas.height, 0, 0);
+        context.fillRect(0,0,1,1);
+        context.restore();
+        //
+
+        thunder.X=150;
+        thunder.draw();
+        thunder.X=500;
+        thunder.draw();
+        thunder.X=800;
+        thunder.draw();
+    }
+    sun.draw();
+    polana.draw();
+    house.draw();
+    tree.draw();
+
+    // deszcz
+    if(rab)
+    {
+        for(var i=0;i<rainTable.length;i++)
+        {
+            if(rainTable[i].yPos<=myCanvas.height) rainTable[i].yPos+=fallStamp+Math.sqrt(rainTable[i].height);
+            else
+            {
+                rainTable[i].yPos=Math.floor(Math.random()*100)-100;
+                rainTable[i].xPos=Math.floor(Math.random()*myCanvas.width);
+            }
+            rainTable[i].draw();
+        }
+    }
+
+    // śnieg
+    if(snb)
+    {
+        for(var i=0;i<snowTable.length;i++)
+        {
+            if(snowTable[i].yPos<=myCanvas.height) snowTable[i].yPos+=fallStamp+Math.sqrt(snowTable[i].radius);
+            else
+            {
+                snowTable[i].yPos=Math.floor(Math.random()*100)-100;
+                snowTable[i].xPos=Math.floor(Math.random()*myCanvas.width);
+            }
+            snowTable[i].draw();
+        }
+    }
+
+
+    // obsługa wiatru
+    if(timeToChange)
+    {
+        if(rab)
+        {
+            for(i=0;i<rainTable.length;i++)
+            {
+                rainTable[i].windInfluence=false;
+            }
+            for(i=0;i<rainTable.length;i++)
+            {
+                var x = Math.random()*50;
+                if(x>=40)
+                    rainTable[i].windInfluence=true;
+            }
+        }
+        else if(snb)
+        {
+            for(i=0;i<snowTable.length;i++)
+            {
+                snowTable[i].windInfluence=false;
+            }
+            for(i=0;i<snowTable.length;i++)
+            {
+                var x = Math.random()*50;
+                if(x>=40)
+                snowTable[i].windInfluence=true;
+            }
+        }
+    }
+
+    if(timer==0)
+    {
+        timeToChange=false;
+    }
+    timer+=0.1;
+    if(timer>=10){
+        timeToChange=true;
+        timer=0;
+    }
+
+
+    // włączony wiatr
+    if(wib)
+    {
+        if(wind>=2.5)
+        {
+            leftWind = true;
+            rightWind=false;
+        }
+        if(wind<=-1.5)
+        {
+            rightWind = true;
+            leftWind = false;
+        }
+        if(leftWind)
+        {
+            wind-=0.01;
+            document.getElementById('windDirection').innerHTML="Left";
+        }
+        if(rightWind)
+        {
+            wind+=0.01;
+            document.getElementById('windDirection').innerHTML="Right";
+
+        }
+    }
+    if(!wib)
+    {
+        document.getElementById('windDirection').innerHTML="None";
+        wind=0;
+    }
+
+
+    // czas, pora dnia
+    if(day == true)
+    {
+        time+=parseFloat(timeStamp);
+    }
+    else
+    {
+        time-=parseFloat(timeStamp);
+    }
+
+    if(time>=0.9 || time<=0)
+    {
+        day = !day;
+    }
+
+    // latarnia
+    lantern.draw();
+    sun.move();
+
+
+    //framer = setTimeout(render, 0);
+
+
+    requestAnimationFrame(render, myCanvas);
+}
